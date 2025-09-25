@@ -1,22 +1,24 @@
 "use strict";
 
 class Upgrade {
-	constructor({ id, name, description, baseCost, clickBonus }) {
-		this.id = id;
-		this.name = name;
-		this.description = description;
-		this.baseCost = baseCost;
-		this.clickBonus = clickBonus; // flat increase to cookies per click
-		this.level = 0;
-	}
+    constructor({ id, name, description, baseCost, type, value, target }) {
+        this.id = id;
+        this.name = name;
+        this.description = description;
+        this.baseCost = baseCost;
+        this.type = type; // "click_add", "producer_mult", "global_cps_mult"
+        this.value = value; // number (add or multiplier like 2 for 2x)
+        this.target = target || null; // producer id for producer_mult or null for all
+        this.level = 0;
+    }
 
-	get cost() {
-		return Math.floor(this.baseCost * Math.pow(1.6, this.level));
-	}
+    get cost() {
+        return Math.floor(this.baseCost * Math.pow(1.6, this.level));
+    }
 }
 
 class Producer {
-	constructor({ id, name, description, baseCost, cookiesPerSecond }) {
+    constructor({ id, name, description, baseCost, cookiesPerSecond }) {
 		this.id = id;
 		this.name = name;
 		this.description = description;
@@ -29,70 +31,126 @@ class Producer {
 		return Math.floor(this.baseCost * Math.pow(1.15, this.count));
 	}
 
-	get totalCps() {
-		return this.count * this.cookiesPerSecond;
-	}
+    get baseTotalCps() {
+        return this.count * this.cookiesPerSecond;
+    }
 }
 
 class Game {
 	constructor() {
 		this.cookies = 0;
 		this.baseClickValue = 1;
-		this.upgrades = [
-			new Upgrade({ id: "u1", name: "Betere oven", description: "+1 per klik", baseCost: 15, clickBonus: 1 }),
-			new Upgrade({ id: "u2", name: "Chocochips", description: "+3 per klik", baseCost: 75, clickBonus: 3 }),
-			new Upgrade({ id: "u3", name: "Goudmix", description: "+10 per klik", baseCost: 300, clickBonus: 10 })
-		];
-		this.producers = [
-			new Producer({ id: "p1", name: "Cursor", description: "0.1/s", baseCost: 25, cookiesPerSecond: 0.1 }),
-			new Producer({ id: "p2", name: "Oma", description: "1/s", baseCost: 100, cookiesPerSecond: 1 }),
-			new Producer({ id: "p3", name: "Boerderij", description: "8/s", baseCost: 1100, cookiesPerSecond: 8 })
-		];
+        this.theme = "dark";
+        this.unlocks = [];
+        this.upgrades = [
+            new Upgrade({ id: "u_click_1", name: "Betere oven", description: "+1 per klik", baseCost: 15, type: "click_add", value: 1 }),
+            new Upgrade({ id: "u_click_2", name: "Extra chocochips", description: "+3 per klik", baseCost: 75, type: "click_add", value: 3 }),
+            new Upgrade({ id: "u_click_3", name: "Goudmix", description: "+10 per klik", baseCost: 300, type: "click_add", value: 10 }),
+            new Upgrade({ id: "u_cur_2x", name: "Snellere cursors", description: "Cursors 2x productief", baseCost: 500, type: "producer_mult", value: 2, target: "p1" }),
+            new Upgrade({ id: "u_grandma_2x", name: "Cadeaus van oma", description: "Oma's 2x productief", baseCost: 2500, type: "producer_mult", value: 2, target: "p2" }),
+            new Upgrade({ id: "u_global_1_2x", name: "Verbeterde receptuur", description: "+20% totale productie", baseCost: 10000, type: "global_cps_mult", value: 1.2 })
+        ];
+        this.producers = [
+            new Producer({ id: "p1", name: "Cursor", description: "0.1/s", baseCost: 15, cookiesPerSecond: 0.1 }),
+            new Producer({ id: "p2", name: "Oma", description: "1/s", baseCost: 100, cookiesPerSecond: 1 }),
+            new Producer({ id: "p3", name: "Boerderij", description: "8/s", baseCost: 1100, cookiesPerSecond: 8 }),
+            new Producer({ id: "p4", name: "Mijn", description: "47/s", baseCost: 12000, cookiesPerSecond: 47 }),
+            new Producer({ id: "p5", name: "Fabriek", description: "260/s", baseCost: 130000, cookiesPerSecond: 260 }),
+            new Producer({ id: "p6", name: "Bank", description: "1400/s", baseCost: 1400000, cookiesPerSecond: 1400 }),
+            new Producer({ id: "p7", name: "Tempel", description: "7800/s", baseCost: 20000000, cookiesPerSecond: 7800 }),
+            new Producer({ id: "p8", name: "Tovenaars toren", description: "44000/s", baseCost: 330000000, cookiesPerSecond: 44000 })
+        ];
 
 		this.lastTick = performance.now();
 		this.tickInterval = null;
+        this.frenzy = { active: false, mult: 1, until: 0 };
 	}
 
-	get clickValue() {
-		const bonus = this.upgrades.reduce((sum, u) => sum + u.level * u.clickBonus, 0);
-		return this.baseClickValue + bonus;
-	}
+    get clickValue() {
+        const add = this.upgrades.reduce((sum, u) => {
+            if (u.type === "click_add") return sum + u.level * u.value;
+            return sum;
+        }, 0);
+        return this.baseClickValue + add;
+    }
 
-	get cookiesPerSecond() {
-		return this.producers.reduce((sum, p) => sum + p.totalCps, 0);
-	}
+    get globalCpsMultiplier() {
+        const mult = this.upgrades.reduce((m, u) => {
+            if (u.type === "global_cps_mult") return m * Math.pow(u.value, u.level);
+            return m;
+        }, 1);
+        return mult * (this.frenzy.active ? this.frenzy.mult : 1);
+    }
 
-	click() {
-		this.cookies += this.clickValue;
-	}
+    getProducerMultiplier(producerId) {
+        let mult = 1;
+        for (const u of this.upgrades) {
+            if (u.type === "producer_mult" && u.target === producerId) {
+                mult *= Math.pow(u.value, u.level);
+            }
+        }
+        return mult;
+    }
+
+    get cookiesPerSecond() {
+        const base = this.producers.reduce((sum, p) => {
+            const effective = p.cookiesPerSecond * this.getProducerMultiplier(p.id);
+            return sum + effective * p.count;
+        }, 0);
+        return base * this.globalCpsMultiplier;
+    }
+
+    click() {
+        this.cookies += this.clickValue;
+    }
 
 	canAfford(amount) {
 		return this.cookies >= amount;
 	}
 
-	buyUpgrade(upgradeId) {
+    buyUpgrade(upgradeId) {
 		const upgrade = this.upgrades.find(u => u.id === upgradeId);
 		if (!upgrade) return false;
 		const cost = upgrade.cost;
 		if (!this.canAfford(cost)) return false;
 		this.cookies -= cost;
 		upgrade.level += 1;
+        this.checkUnlocks();
 		return true;
 	}
 
-	buyProducer(producerId) {
+    buyProducer(producerId) {
 		const producer = this.producers.find(p => p.id === producerId);
 		if (!producer) return false;
 		const cost = producer.cost;
 		if (!this.canAfford(cost)) return false;
 		this.cookies -= cost;
 		producer.count += 1;
+        this.checkUnlocks();
 		return true;
 	}
 
-	update(deltaSeconds) {
-		this.cookies += this.cookiesPerSecond * deltaSeconds;
-	}
+    update(deltaSeconds) {
+        if (this.frenzy.active && performance.now() >= this.frenzy.until) {
+            this.frenzy = { active: false, mult: 1, until: 0 };
+        }
+        this.cookies += this.cookiesPerSecond * deltaSeconds;
+    }
+
+    triggerFrenzy(multiplier, msDuration) {
+        this.frenzy = { active: true, mult: multiplier, until: performance.now() + msDuration };
+    }
+
+    setTheme(theme) {
+        this.theme = theme;
+    }
+
+    checkUnlocks() {
+        // Simple unlocks tied to totals
+        const totalProducers = this.producers.reduce((s, p) => s + p.count, 0);
+        if (totalProducers >= 10 && !this.unlocks.includes("builder")) this.unlocks.push("builder");
+        if (this.cookies >= 100000 && !this.unlocks.includes("rich")) this.unlocks.push("rich");
+    }
 
 	start() {
 		if (this.tickInterval) return;
@@ -113,15 +171,17 @@ class Game {
 		}
 	}
 
-	serialize() {
+    serialize() {
 		return {
 			cookies: this.cookies,
-			upgrades: this.upgrades.map(u => ({ id: u.id, level: u.level })),
-			producers: this.producers.map(p => ({ id: p.id, count: p.count }))
+            upgrades: this.upgrades.map(u => ({ id: u.id, level: u.level })),
+            producers: this.producers.map(p => ({ id: p.id, count: p.count })),
+            theme: this.theme,
+            unlocks: this.unlocks
 		};
 	}
 
-	load(state) {
+    load(state) {
 		if (!state) return;
 		this.cookies = Number(state.cookies) || 0;
 		for (const u of state.upgrades || []) {
@@ -132,6 +192,8 @@ class Game {
 			const target = this.producers.find(x => x.id === p.id);
 			if (target) target.count = Number(p.count) || 0;
 		}
+        if (state.theme) this.theme = state.theme;
+        if (Array.isArray(state.unlocks)) this.unlocks = state.unlocks;
 	}
 }
 
@@ -167,12 +229,17 @@ const UI = {
 		this.$cookieBtn = document.getElementById("cookieButton");
 		this.$upgradeList = document.getElementById("upgradeList");
 		this.$producerList = document.getElementById("producerList");
+        this.$overviewList = document.getElementById("overviewList");
+        this.$unlocksInfo = document.getElementById("unlocksInfo");
 		this.$saveBtn = document.getElementById("saveBtn");
 		this.$loadBtn = document.getElementById("loadBtn");
 		this.$resetBtn = document.getElementById("resetBtn");
+        this.$themeSelect = document.getElementById("themeSelect");
+        this.$eventLayer = document.getElementById("eventLayer");
 
 		this.$cookieBtn.addEventListener("click", () => {
 			this.game.click();
+            this.spawnClickFx("+" + formatNumber(this.game.clickValue));
 			this.render();
 		});
 
@@ -181,7 +248,10 @@ const UI = {
 			const state = Storage.load();
 			if (state) {
 				this.game.load(state);
-				this.render();
+                this.applyTheme(this.game.theme);
+                this.$themeSelect.value = this.game.theme;
+                this.renderLists();
+                this.render();
 			}
 		});
 		this.$resetBtn.addEventListener("click", () => {
@@ -191,8 +261,19 @@ const UI = {
 			}
 		});
 
+        this.$themeSelect.addEventListener("change", () => {
+            const value = this.$themeSelect.value;
+            this.game.setTheme(value);
+            this.applyTheme(value);
+            Storage.save(this.game);
+        });
+
 		this.renderLists();
+        this.applyTheme(this.game.theme);
+        this.$themeSelect.value = this.game.theme;
 		this.render();
+
+        this.scheduleGoldenCookie();
 	},
 
 	renderLists() {
@@ -202,7 +283,7 @@ const UI = {
 			li.className = "list-item";
 			li.innerHTML = `
 				<div>
-					<div class="item-title">${u.name} (Lv. ${u.level})</div>
+                    <div class="item-title">${u.name} (Lv. ${u.level})</div>
 					<div class="item-desc">${u.description}</div>
 				</div>
 				<div class="item-meta">
@@ -219,12 +300,12 @@ const UI = {
 			li.className = "list-item";
 			li.innerHTML = `
 				<div>
-					<div class="item-title">${p.name} (x${p.count})</div>
+                    <div class="item-title">${p.name} (x${p.count})</div>
 					<div class="item-desc">${p.description}</div>
 				</div>
 				<div class="item-meta">
 					<div>Prijs: <strong>${formatNumber(p.cost)}</strong></div>
-					<div>+${p.cookiesPerSecond}/s</div>
+                    <div>+${p.cookiesPerSecond}/s</div>
 					<button class="buy-btn" data-type="producer" data-id="${p.id}">Koop</button>
 				</div>
 			`;
@@ -233,6 +314,8 @@ const UI = {
 
 		this.$upgradeList.addEventListener("click", (e) => this.handleBuy(e));
 		this.$producerList.addEventListener("click", (e) => this.handleBuy(e));
+
+        this.renderOverview();
 	},
 
 	handleBuy(e) {
@@ -260,6 +343,12 @@ const UI = {
 			if (type === "producer") cost = this.game.producers.find(p => p.id === id).cost;
 			btn.disabled = !this.game.canAfford(cost);
 		}
+
+        // unlocks info
+        const unlocksText = this.game.unlocks.length ? this.game.unlocks.join(", ") : "geen";
+        this.$unlocksInfo.textContent = `Ontgrendelingen: ${unlocksText}`;
+
+        this.renderOverview();
 	}
 };
 
@@ -269,6 +358,102 @@ function formatNumber(value) {
 	if (value < 1_000_000_000) return (value / 1_000_000).toFixed(2) + "M";
 	return (value / 1_000_000_000).toFixed(2) + "B";
 }
+
+// UI helpers
+UI.renderOverview = function() {
+    if (!this.$overviewList) return;
+    this.$overviewList.innerHTML = "";
+    // producers
+    for (const p of this.game.producers) {
+        if (p.count > 0) {
+            const li = document.createElement("li");
+            li.className = "list-item";
+            li.innerHTML = `<div><div class="item-title">${p.name}</div><div class="item-desc">Aantal: ${p.count}</div></div><div class="item-meta"><div>${formatNumber(p.cookiesPerSecond)} /s elk</div></div>`;
+            this.$overviewList.appendChild(li);
+        }
+    }
+    // upgrades
+    for (const u of this.game.upgrades) {
+        if (u.level > 0) {
+            const li = document.createElement("li");
+            li.className = "list-item";
+            li.innerHTML = `<div><div class="item-title">${u.name}</div><div class="item-desc">Niveau: ${u.level}</div></div>`;
+            this.$overviewList.appendChild(li);
+        }
+    }
+};
+
+UI.applyTheme = function(theme) {
+    const root = document.documentElement;
+    const themes = {
+        dark: { bg: "#0f172a", panel: "#111827", text: "#e5e7eb", muted: "#9ca3af", primary: "#f59e0b", primary600: "#d97706" },
+        slate: { bg: "#0b1220", panel: "#0f172a", text: "#e2e8f0", muted: "#94a3b8", primary: "#22d3ee", primary600: "#06b6d4" },
+        sunset: { bg: "#1b1126", panel: "#24112e", text: "#ffd8a8", muted: "#f59f9f", primary: "#ff7b54", primary600: "#ff5b37" },
+        retro: { bg: "#2b2f2f", panel: "#1e2222", text: "#f2f2d0", muted: "#a3a38a", primary: "#f2c94c", primary600: "#d4a418" }
+    };
+    const t = themes[theme] || themes.dark;
+    root.style.setProperty("--bg", t.bg);
+    root.style.setProperty("--panel", t.panel);
+    root.style.setProperty("--text", t.text);
+    root.style.setProperty("--muted", t.muted);
+    root.style.setProperty("--primary", t.primary);
+    root.style.setProperty("--primary-600", t.primary600);
+};
+
+UI.spawnClickFx = function(text) {
+    const rect = this.$cookieBtn.getBoundingClientRect();
+    const span = document.createElement("span");
+    span.textContent = text;
+    span.style.position = "fixed";
+    span.style.left = (rect.left + rect.width / 2 + (Math.random() * 40 - 20)) + "px";
+    span.style.top = (rect.top + rect.height / 2) + "px";
+    span.style.color = "var(--success)";
+    span.style.pointerEvents = "none";
+    span.style.opacity = "1";
+    span.style.transition = "transform 600ms ease, opacity 600ms ease";
+    span.style.transform = "translateY(0px)";
+    document.body.appendChild(span);
+    requestAnimationFrame(() => {
+        span.style.transform = "translateY(-40px)";
+        span.style.opacity = "0";
+    });
+    setTimeout(() => span.remove(), 650);
+};
+
+UI.scheduleGoldenCookie = function() {
+    const minMs = 25000, maxMs = 45000;
+    const delay = Math.floor(minMs + Math.random() * (maxMs - minMs));
+    setTimeout(() => this.spawnGoldenCookie(), delay);
+};
+
+UI.spawnGoldenCookie = function() {
+    const btn = document.createElement("button");
+    btn.textContent = "★";
+    btn.setAttribute("aria-label", "Golden Cookie");
+    btn.style.position = "fixed";
+    const viewportW = window.innerWidth;
+    const viewportH = window.innerHeight;
+    btn.style.left = Math.max(20, Math.random() * (viewportW - 60)) + "px";
+    btn.style.top = Math.max(80, Math.random() * (viewportH - 160)) + "px";
+    btn.style.zIndex = "9999";
+    btn.style.border = "none";
+    btn.style.borderRadius = "999px";
+    btn.style.padding = "10px 12px";
+    btn.style.background = "gold";
+    btn.style.color = "#5a3";
+    btn.style.boxShadow = "0 6px 16px rgba(0,0,0,.35)";
+    btn.style.cursor = "pointer";
+    document.body.appendChild(btn);
+    const remove = () => { btn.remove(); this.scheduleGoldenCookie(); };
+    const timeout = setTimeout(remove, 13000);
+    btn.addEventListener("click", () => {
+        clearTimeout(timeout);
+        btn.remove();
+        this.game.triggerFrenzy(7, 15000);
+        this.spawnClickFx("Frenzy!");
+        this.scheduleGoldenCookie();
+    });
+};
 
 const game = new Game();
 const saved = Storage.load();

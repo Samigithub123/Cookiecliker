@@ -1,10 +1,70 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="nl">
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Cookie Clicker</title>
+	<link rel="stylesheet" href="style.css" />
 </head>
 <body>
+	<div class="app">
+		<header class="app__header">
+			<h1 class="title">Cookie Clicker</h1>
+			<div class="stats">
+				<div class="stat"><span class="label">Koekjes:</span> <strong id="cookies">0</strong></div>
+				<div class="stat"><span class="label">Per klik:</span> <strong id="perClick">1</strong></div>
+				<div class="stat"><span class="label">Per seconde:</span> <strong id="perSecond">0</strong></div>
+			</div>
+		</header>
 
+		<main class="app__main">
+			<section class="clicker">
+				<button id="cookieButton" class="cookie-button" aria-label="Klik voor koekjes">
+					<img id="cookieImg" src="assets/cookie.png" alt="Cookie" style="width: 70%; height: 70%; object-fit: contain; border-radius: 50%; pointer-events: none;" />
+				</button>
+				<div style="margin-top: 12px; color: var(--muted);">Klik op de koek om meer te verdienen</div>
+				<div id="eventLayer" style="position: relative; width: 100%; height: 0;"></div>
+			</section>
+
+			<aside class="shop">
+				<h2>Winkel</h2>
+				<div class="shop__section">
+					<h3>Upgrades</h3>
+					<ul id="upgradeList" class="list"></ul>
+				</div>
+				<div class="shop__section">
+					<h3>Productie-eenheden</h3>
+					<ul id="producerList" class="list"></ul>
+				</div>
+			</aside>
+		</main>
+
+		<section class="shop" style="display: grid; gap: 12px;">
+			<h3>Overzicht & Thema</h3>
+			<div style="display:flex; gap:12px; flex-wrap: wrap; align-items: center;">
+				<div>
+					<label for="themeSelect" class="label">Thema:</label>
+					<select id="themeSelect" class="secondary">
+						<option value="dark">Donker</option>
+						<option value="slate">Leisteen</option>
+						<option value="sunset">Zonsondergang</option>
+						<option value="retro">Retro</option>
+					</select>
+				</div>
+				<div id="unlocksInfo" class="label">Ontgrendelingen: geen</div>
+			</div>
+			<div class="shop__section">
+				<ul id="overviewList" class="list"></ul>
+			</div>
+		</section>
+
+		<footer class="app__footer">
+			<button id="saveBtn" class="secondary">Opslaan</button>
+			<button id="loadBtn" class="secondary">Laden</button>
+			<button id="resetBtn" class="danger">Reset</button>
+		</footer>
+	</div>
+
+	<script src="javascript.js"></script>
 </body>
 </html>
