@@ -1,4 +1,4 @@
-"use strict";
+  "use strict";
 
 class Upgrade {
     constructor({ id, name, description, baseCost, type, value, target }) {
@@ -465,3 +465,6 @@ window.addEventListener("DOMContentLoaded", () => {
 	// autosave every 15s
 	setInterval(() => Storage.save(game), 15000);
 });
+
+document.cookie = "username=Jan; expires=" + date.toUTCString() + "; path=/";
+document.cookie = "username=Jan; path=/; max-age=" + (60 * 60 * 24 * 7);

@@ -30,4 +30,30 @@ body {
 	height: 260px;
 	cursor: pointer;
 }
-.cookie-button:active { transform: scale(0.98); }
+
+.cookie-button:active { transform: scale(0.96); filter: brightness(0.95); }
+.cookie-emoji { font-size: 80px; display: block; }
+.cookie-text { font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+
+.shop h2, .shop h3 { margin: 0 0 10px; }
+.shop { background: var(--panel); padding: 16px; border-radius: 12px; }
+.shop__section { margin-top: 16px; }
+
+.list { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+.list-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #0b1220; border: 1px solid #1f2937; padding: 12px; border-radius: 10px; }
+.item-title { font-weight: 600; }
+.item-desc { color: var(--muted); font-size: 12px; }
+.item-meta { display: flex; gap: 12px; color: var(--muted); }
+.buy-btn { background: #1f2937; color: var(--text); border: 1px solid #334155; border-radius: 8px; padding: 8px 12px; cursor: pointer; transition: opacity .15s ease, transform .08s ease; }
+.buy-btn:disabled { opacity: .4; cursor: not-allowed; }
+.buy-btn:active { transform: translateY(1px); }
+
+.app__footer { display: flex; gap: 10px; justify-content: flex-end; }
+.secondary { background: #0b1220; color: var(--text); border: 1px solid #1f2937; border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+.danger { background: var(--danger); color: white; border: none; border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+
+@media (max-width: 900px) {
+	.app__main { grid-template-columns: 1fr; }
+	.cookie-button { width: 200px; height: 200px; }
+} 
+
