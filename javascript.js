@@ -1,5 +1,8 @@
   "use strict";
 
+// Debug log to verify JavaScript is running
+console.log("JavaScript is running!");
+
 class Upgrade {
     constructor({ id, name, description, baseCost, type, value, target }) {
         this.id = id;
@@ -224,18 +227,38 @@ const UI = {
 	init(game) {
 		this.game = game;
 		this.$cookies = document.getElementById("cookies");
-		this.$perClick = document.getElementById("perClick");
-		this.$perSecond = document.getElementById("perSecond");
+		this.$perClick = document.createElement("div");
+		this.$perSecond = document.createElement("div");
 		this.$cookieBtn = document.getElementById("cookieButton");
-		this.$upgradeList = document.getElementById("upgradeList");
+		this.$upgradeList = document.createElement("div");
 		this.$producerList = document.getElementById("producerList");
-        this.$overviewList = document.getElementById("overviewList");
-        this.$unlocksInfo = document.getElementById("unlocksInfo");
-		this.$saveBtn = document.getElementById("saveBtn");
-		this.$loadBtn = document.getElementById("loadBtn");
-		this.$resetBtn = document.getElementById("resetBtn");
-        this.$themeSelect = document.getElementById("themeSelect");
-        this.$eventLayer = document.getElementById("eventLayer");
+        this.$overviewList = document.createElement("div");
+        this.$unlocksInfo = document.createElement("div");
+        
+        // Create control buttons
+        const controls = document.createElement("div");
+        controls.style.position = 'fixed';
+        controls.style.bottom = '20px';
+        controls.style.left = '20px';
+        controls.style.display = 'flex';
+        controls.style.gap = '10px';
+        
+        this.$saveBtn = document.createElement("button");
+        this.$saveBtn.textContent = "Save";
+        this.$loadBtn = document.createElement("button");
+        this.$loadBtn.textContent = "Load";
+        this.$resetBtn = document.createElement("button");
+        this.$resetBtn.textContent = "Reset";
+        
+        controls.appendChild(this.$saveBtn);
+        controls.appendChild(this.$loadBtn);
+        controls.appendChild(this.$resetBtn);
+        document.body.appendChild(controls);
+        
+        this.$themeSelect = document.createElement("select");
+        this.$eventLayer = document.createElement("div");
+        this.$eventLayer.id = "eventLayer";
+        document.body.appendChild(this.$eventLayer);
 
 		this.$cookieBtn.addEventListener("click", () => {
 			this.game.click();
@@ -276,47 +299,80 @@ const UI = {
         this.scheduleGoldenCookie();
 	},
 
-	renderLists() {
-		this.$upgradeList.innerHTML = "";
-		for (const u of this.game.upgrades) {
-			const li = document.createElement("li");
-			li.className = "list-item";
-			li.innerHTML = `
-				<div>
-                    <div class="item-title">${u.name} (Lv. ${u.level})</div>
-					<div class="item-desc">${u.description}</div>
-				</div>
-				<div class="item-meta">
-					<div>Prijs: <strong>${formatNumber(u.cost)}</strong></div>
-					<button class="buy-btn" data-type="upgrade" data-id="${u.id}">Koop</button>
-				</div>
-			`;
-			this.$upgradeList.appendChild(li);
-		}
+    renderLists() {
+        console.log("Rendering producer list...");
+        
+        // Clear existing content
+        this.$upgradeList.innerHTML = "";
+        this.$producerList.innerHTML = "";
 
-		this.$producerList.innerHTML = "";
-		for (const p of this.game.producers) {
-			const li = document.createElement("li");
-			li.className = "list-item";
-			li.innerHTML = `
-				<div>
-                    <div class="item-title">${p.name} (x${p.count})</div>
-					<div class="item-desc">${p.description}</div>
-				</div>
-				<div class="item-meta">
-					<div>Prijs: <strong>${formatNumber(p.cost)}</strong></div>
-                    <div>+${p.cookiesPerSecond}/s</div>
-					<button class="buy-btn" data-type="producer" data-id="${p.id}">Koop</button>
-				</div>
-			`;
-			this.$producerList.appendChild(li);
-		}
+        // Render producers with modern UI
+        this.game.producers.forEach(producer => {
+            const item = document.createElement('div');
+            item.className = 'producer-item';
+            item.dataset.id = producer.id;
+            item.innerHTML = `
+                <div class="producer-header">
+                    <h3 class="producer-name">${producer.name}</h3>
+                    <span class="producer-count">${producer.count}</span>
+                </div>
+                <div class="producer-details">
+                    <div>
+                        <div class="producer-cps">${producer.cookiesPerSecond} koekjes per seconde</div>
+                        <div class="producer-cost">${formatNumber(producer.cost)} koekjes</div>
+                    </div>
+                    <button class="buy-btn" data-type="producer" data-id="${producer.id}" 
+                            ${!this.game.canAfford(producer.cost) ? 'disabled' : ''}>
+                        Koop
+                    </button>
+                </div>
+            `;
+
+            // Add click handler with animation
+            const buyBtn = item.querySelector('.buy-btn');
+            buyBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (this.game.buyProducer(producer.id)) {
+                    // Add animation class
+                    item.classList.add('purchase-effect');
+                    // Remove the class after animation completes
+                    setTimeout(() => {
+                        item.classList.remove('purchase-effect');
+                    }, 600);
+                    this.render();
+                }
+            });
+
+            this.$producerList.appendChild(item);
+        });
+        
+        // Render upgrades with modern UI if needed
+        for (const u of this.game.upgrades) {
+            const item = document.createElement('div');
+            item.className = 'producer-item';
+            item.innerHTML = `
+                <div class="producer-header">
+                    <h3 class="producer-name">${u.name} <span style="opacity: 0.7; font-size: 0.9em;">(Lv. ${u.level})</span></h3>
+                </div>
+                <div class="producer-details">
+                    <div>
+                        <div class="producer-cps">${u.description}</div>
+                        <div class="producer-cost">${formatNumber(u.cost)} koekjes</div>
+                    </div>
+                    <button class="buy-btn" data-type="upgrade" data-id="${u.id}" 
+                            ${!this.game.canAfford(u.cost) || u.level >= 1 ? 'disabled' : ''}>
+                        ${u.level > 0 ? 'Gekocht' : 'Koop'}
+                    </button>
+                </div>
+            `;
+            this.$upgradeList.appendChild(item);
+        }
 
 		this.$upgradeList.addEventListener("click", (e) => this.handleBuy(e));
 		this.$producerList.addEventListener("click", (e) => this.handleBuy(e));
 
         this.renderOverview();
-	},
+    },
 
 	handleBuy(e) {
 		const button = e.target.closest("button.buy-btn");
@@ -455,16 +511,31 @@ UI.spawnGoldenCookie = function() {
     });
 };
 
+// Main game initialization
+console.log("Script loaded, initializing game...");
+
+// Create game instance
 const game = new Game();
+console.log("Game instance created");
+
+// Load saved game if available
 const saved = Storage.load();
-if (saved) game.load(saved);
+if (saved) {
+    console.log("Loading saved game state");
+    game.load(saved);
+}
 
+// Initialize UI when DOM is fully loaded
 window.addEventListener("DOMContentLoaded", () => {
-	UI.init(game);
-	game.start();
-	// autosave every 15s
-	setInterval(() => Storage.save(game), 15000);
+    console.log("DOM fully loaded, initializing UI...");
+    UI.init(game);
+    game.start();
+    
+    // Autosave every 15 seconds
+    setInterval(() => {
+        Storage.save(game);
+        console.log("Game autosaved");
+    }, 15000);
+    
+    console.log("Game started!");
 });
-
-document.cookie = "username=Jan; expires=" + date.toUTCString() + "; path=/";
-document.cookie = "username=Jan; path=/; max-age=" + (60 * 60 * 24 * 7);
