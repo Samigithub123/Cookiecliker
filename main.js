@@ -1,5 +1,28 @@
   "use strict";
 
+<<<<<<< HEAD:main.js
+=======
+// Debug log to verify JavaScript is running
+console.log("JavaScript is running!");
+
+class Upgrade {
+    constructor({ id, name, description, baseCost, type, value, target }) {
+        this.id = id;
+        this.name = name;
+        this.description = description;
+        this.baseCost = baseCost;
+        this.type = type; // "click_add", "producer_mult", "global_cps_mult"
+        this.value = value; // number (add or multiplier like 2 for 2x)
+        this.target = target || null; // producer id for producer_mult or null for all
+        this.level = 0;
+    }
+
+    get cost() {
+        return Math.floor(this.baseCost * Math.pow(1.6, this.level));
+    }
+}
+
+>>>>>>> origin/main:javascript.js
 class Producer {
     constructor({ id, name, description, baseCost, cookiesPerSecond }) {
 		this.id = id;
@@ -25,6 +48,17 @@ class Game {
 		this.baseClickValue = 1;
         this.theme = "dark";
         this.unlocks = [];
+<<<<<<< HEAD:main.js
+=======
+        this.upgrades = [
+            new Upgrade({ id: "u_click_1", name: "Betere oven", description: "+1 per klik", baseCost: 15, type: "click_add", value: 1 }),
+            new Upgrade({ id: "u_click_2", name: "Extra chocochips", description: "+3 per klik", baseCost: 75, type: "click_add", value: 3 }),
+            new Upgrade({ id: "u_click_3", name: "Goudmix", description: "+10 per klik", baseCost: 300, type: "click_add", value: 10 }),
+            new Upgrade({ id: "u_cur_2x", name: "Snellere cursors", description: "Cursors 2x productief", baseCost: 500, type: "producer_mult", value: 2, target: "p1" }),
+            new Upgrade({ id: "u_grandma_2x", name: "Cadeaus van oma", description: "Oma's 2x productief", baseCost: 2500, type: "producer_mult", value: 2, target: "p2" }),
+            new Upgrade({ id: "u_global_1_2x", name: "Verbeterde receptuur", description: "+20% totale productie", baseCost: 10000, type: "global_cps_mult", value: 1.2 })
+        ];
+>>>>>>> origin/main:javascript.js
         this.producers = [
             new Producer({ id: "p1", name: "Cursor", description: "0.1/s", baseCost: 15, cookiesPerSecond: 0.1 }),
             new Producer({ id: "p2", name: "Oma", description: "1/s", baseCost: 100, cookiesPerSecond: 1 }),
@@ -41,6 +75,7 @@ class Game {
         this.frenzy = { active: false, mult: 1, until: 0 };
 	}
 
+<<<<<<< HEAD:main.js
 	get clickValue() {
 		return this.baseClickValue;
 	}
@@ -52,6 +87,33 @@ class Game {
 	getProducerMultiplier(producerId) {
 		return 1;
 	}
+=======
+    get clickValue() {
+        const add = this.upgrades.reduce((sum, u) => {
+            if (u.type === "click_add") return sum + u.level * u.value;
+            return sum;
+        }, 0);
+        return this.baseClickValue + add;
+    }
+
+    get globalCpsMultiplier() {
+        const mult = this.upgrades.reduce((m, u) => {
+            if (u.type === "global_cps_mult") return m * Math.pow(u.value, u.level);
+            return m;
+        }, 1);
+        return mult * (this.frenzy.active ? this.frenzy.mult : 1);
+    }
+
+    getProducerMultiplier(producerId) {
+        let mult = 1;
+        for (const u of this.upgrades) {
+            if (u.type === "producer_mult" && u.target === producerId) {
+                mult *= Math.pow(u.value, u.level);
+            }
+        }
+        return mult;
+    }
+>>>>>>> origin/main:javascript.js
 
     get cookiesPerSecond() {
         const base = this.producers.reduce((sum, p) => {
@@ -69,7 +131,20 @@ class Game {
 		return this.cookies >= amount;
 	}
 
+<<<<<<< HEAD:main.js
 	// upgrades verwijderd
+=======
+    buyUpgrade(upgradeId) {
+		const upgrade = this.upgrades.find(u => u.id === upgradeId);
+		if (!upgrade) return false;
+		const cost = upgrade.cost;
+		if (!this.canAfford(cost)) return false;
+		this.cookies -= cost;
+		upgrade.level += 1;
+        this.checkUnlocks();
+		return true;
+	}
+>>>>>>> origin/main:javascript.js
 
     buyProducer(producerId) {
 		const producer = this.producers.find(p => p.id === producerId);
@@ -126,6 +201,10 @@ class Game {
     serialize() {
 		return {
 			cookies: this.cookies,
+<<<<<<< HEAD:main.js
+=======
+            upgrades: this.upgrades.map(u => ({ id: u.id, level: u.level })),
+>>>>>>> origin/main:javascript.js
             producers: this.producers.map(p => ({ id: p.id, count: p.count })),
             theme: this.theme,
             unlocks: this.unlocks
@@ -135,6 +214,13 @@ class Game {
     load(state) {
 		if (!state) return;
 		this.cookies = Number(state.cookies) || 0;
+<<<<<<< HEAD:main.js
+=======
+		for (const u of state.upgrades || []) {
+			const target = this.upgrades.find(x => x.id === u.id);
+			if (target) target.level = Number(u.level) || 0;
+		}
+>>>>>>> origin/main:javascript.js
 		for (const p of state.producers || []) {
 			const target = this.producers.find(x => x.id === p.id);
 			if (target) target.count = Number(p.count) || 0;
@@ -171,6 +257,7 @@ const UI = {
 	init(game) {
 		this.game = game;
 		this.$cookies = document.getElementById("cookies");
+<<<<<<< HEAD:main.js
 		this.$perClick = document.getElementById("perClick");
 		this.$perSecond = document.getElementById("perSecond");
 		this.$cookieBtn = document.getElementById("cookieButton");
@@ -206,12 +293,66 @@ const UI = {
 			}
 		});
 		if (this.$resetBtn) this.$resetBtn.addEventListener("click", () => {
+=======
+		this.$perClick = document.createElement("div");
+		this.$perSecond = document.createElement("div");
+		this.$cookieBtn = document.getElementById("cookieButton");
+		this.$upgradeList = document.createElement("div");
+		this.$producerList = document.getElementById("producerList");
+        this.$overviewList = document.createElement("div");
+        this.$unlocksInfo = document.createElement("div");
+        
+        // Create control buttons
+        const controls = document.createElement("div");
+        controls.style.position = 'fixed';
+        controls.style.bottom = '20px';
+        controls.style.left = '20px';
+        controls.style.display = 'flex';
+        controls.style.gap = '10px';
+        
+        this.$saveBtn = document.createElement("button");
+        this.$saveBtn.textContent = "Save";
+        this.$loadBtn = document.createElement("button");
+        this.$loadBtn.textContent = "Load";
+        this.$resetBtn = document.createElement("button");
+        this.$resetBtn.textContent = "Reset";
+        
+        controls.appendChild(this.$saveBtn);
+        controls.appendChild(this.$loadBtn);
+        controls.appendChild(this.$resetBtn);
+        document.body.appendChild(controls);
+        
+        this.$themeSelect = document.createElement("select");
+        this.$eventLayer = document.createElement("div");
+        this.$eventLayer.id = "eventLayer";
+        document.body.appendChild(this.$eventLayer);
+
+		this.$cookieBtn.addEventListener("click", () => {
+			this.game.click();
+            this.spawnClickFx("+" + formatNumber(this.game.clickValue));
+			this.render();
+		});
+
+		this.$saveBtn.addEventListener("click", () => Storage.save(this.game));
+		this.$loadBtn.addEventListener("click", () => {
+			const state = Storage.load();
+			if (state) {
+				this.game.load(state);
+                this.applyTheme(this.game.theme);
+                this.$themeSelect.value = this.game.theme;
+                this.renderLists();
+                this.render();
+			}
+		});
+		this.$resetBtn.addEventListener("click", () => {
+>>>>>>> origin/main:javascript.js
 			if (confirm("Weet je zeker dat je wilt resetten?")) {
 				Storage.clear();
 				window.location.reload();
 			}
 		});
 
+<<<<<<< HEAD:main.js
 		if (this.$themeSelect) {
 			this.$themeSelect.addEventListener("change", () => {
 				const value = this.$themeSelect.value;
@@ -226,11 +367,24 @@ const UI = {
 			this.applyTheme(this.game.theme);
 			this.$themeSelect.value = this.game.theme;
 		}
+=======
+        this.$themeSelect.addEventListener("change", () => {
+            const value = this.$themeSelect.value;
+            this.game.setTheme(value);
+            this.applyTheme(value);
+            Storage.save(this.game);
+        });
+
+		this.renderLists();
+        this.applyTheme(this.game.theme);
+        this.$themeSelect.value = this.game.theme;
+>>>>>>> origin/main:javascript.js
 		this.render();
 
         this.scheduleGoldenCookie();
 	},
 
+<<<<<<< HEAD:main.js
 
 renderLists() {
 		if (!this.$producerList) {
@@ -266,34 +420,134 @@ renderLists() {
 
 
 handleBuy(e) {
+=======
+    renderLists() {
+        console.log("Rendering producer list...");
+        
+        // Clear existing content
+        this.$upgradeList.innerHTML = "";
+        this.$producerList.innerHTML = "";
+
+        // Render producers with modern UI
+        this.game.producers.forEach(producer => {
+            const item = document.createElement('div');
+            item.className = 'producer-item';
+            item.dataset.id = producer.id;
+            item.innerHTML = `
+                <div class="producer-header">
+                    <h3 class="producer-name">${producer.name}</h3>
+                    <span class="producer-count">${producer.count}</span>
+                </div>
+                <div class="producer-details">
+                    <div>
+                        <div class="producer-cps">${producer.cookiesPerSecond} koekjes per seconde</div>
+                        <div class="producer-cost">${formatNumber(producer.cost)} koekjes</div>
+                    </div>
+                    <button class="buy-btn" data-type="producer" data-id="${producer.id}" 
+                            ${!this.game.canAfford(producer.cost) ? 'disabled' : ''}>
+                        Koop
+                    </button>
+                </div>
+            `;
+
+            // Add click handler with animation
+            const buyBtn = item.querySelector('.buy-btn');
+            buyBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (this.game.buyProducer(producer.id)) {
+                    // Add animation class
+                    item.classList.add('purchase-effect');
+                    // Remove the class after animation completes
+                    setTimeout(() => {
+                        item.classList.remove('purchase-effect');
+                    }, 600);
+                    this.render();
+                }
+            });
+
+            this.$producerList.appendChild(item);
+        });
+        
+        // Render upgrades with modern UI if needed
+        for (const u of this.game.upgrades) {
+            const item = document.createElement('div');
+            item.className = 'producer-item';
+            item.innerHTML = `
+                <div class="producer-header">
+                    <h3 class="producer-name">${u.name} <span style="opacity: 0.7; font-size: 0.9em;">(Lv. ${u.level})</span></h3>
+                </div>
+                <div class="producer-details">
+                    <div>
+                        <div class="producer-cps">${u.description}</div>
+                        <div class="producer-cost">${formatNumber(u.cost)} koekjes</div>
+                    </div>
+                    <button class="buy-btn" data-type="upgrade" data-id="${u.id}" 
+                            ${!this.game.canAfford(u.cost) || u.level >= 1 ? 'disabled' : ''}>
+                        ${u.level > 0 ? 'Gekocht' : 'Koop'}
+                    </button>
+                </div>
+            `;
+            this.$upgradeList.appendChild(item);
+        }
+
+		this.$upgradeList.addEventListener("click", (e) => this.handleBuy(e));
+		this.$producerList.addEventListener("click", (e) => this.handleBuy(e));
+
+        this.renderOverview();
+    },
+
+	handleBuy(e) {
+>>>>>>> origin/main:javascript.js
 		const button = e.target.closest("button.buy-btn");
 		if (!button) return;
 		const type = button.getAttribute("data-type");
 		const id = button.getAttribute("data-id");
+<<<<<<< HEAD:main.js
+=======
+		if (type === "upgrade") this.game.buyUpgrade(id);
+>>>>>>> origin/main:javascript.js
 		if (type === "producer") this.game.buyProducer(id);
 		this.renderLists();
 		this.render();
 	},
 
+<<<<<<< HEAD:main.js
 render() {
 		if (this.$cookies) this.$cookies.textContent = formatNumber(this.game.cookies);
 		if (this.$perClick) this.$perClick.textContent = formatNumber(this.game.clickValue);
 		if (this.$perSecond) this.$perSecond.textContent = formatNumber(this.game.cookiesPerSecond);
+=======
+	render() {
+		this.$cookies.textContent = formatNumber(this.game.cookies);
+		this.$perClick.textContent = formatNumber(this.game.clickValue);
+		this.$perSecond.textContent = formatNumber(this.game.cookiesPerSecond);
+>>>>>>> origin/main:javascript.js
 
 		// enable/disable buy buttons by affordability
 		for (const btn of document.querySelectorAll(".buy-btn")) {
 			const type = btn.getAttribute("data-type");
 			const id = btn.getAttribute("data-id");
 			let cost = Infinity;
+<<<<<<< HEAD:main.js
+=======
+			if (type === "upgrade") cost = this.game.upgrades.find(u => u.id === id).cost;
+>>>>>>> origin/main:javascript.js
 			if (type === "producer") cost = this.game.producers.find(p => p.id === id).cost;
 			btn.disabled = !this.game.canAfford(cost);
 		}
 
         // unlocks info
+<<<<<<< HEAD:main.js
 		const unlocksText = this.game.unlocks.length ? this.game.unlocks.join(", ") : "geen";
 		if (this.$unlocksInfo) this.$unlocksInfo.textContent = `Ontgrendelingen: ${unlocksText}`;
 
 		this.renderOverview();
+=======
+        const unlocksText = this.game.unlocks.length ? this.game.unlocks.join(", ") : "geen";
+        this.$unlocksInfo.textContent = `Ontgrendelingen: ${unlocksText}`;
+
+        this.renderOverview();
+>>>>>>> origin/main:javascript.js
 	}
 };
 
@@ -317,6 +571,18 @@ UI.renderOverview = function() {
             this.$overviewList.appendChild(li);
         }
     }
+<<<<<<< HEAD:main.js
+=======
+    // upgrades
+    for (const u of this.game.upgrades) {
+        if (u.level > 0) {
+            const li = document.createElement("li");
+            li.className = "list-item";
+            li.innerHTML = `<div><div class="item-title">${u.name}</div><div class="item-desc">Niveau: ${u.level}</div></div>`;
+            this.$overviewList.appendChild(li);
+        }
+    }
+>>>>>>> origin/main:javascript.js
 };
 
 UI.applyTheme = function(theme) {
@@ -391,6 +657,7 @@ UI.spawnGoldenCookie = function() {
     });
 };
 
+<<<<<<< HEAD:main.js
 const game = new Game();
 const saved = Storage.load();
 if (saved) game.load(saved);
@@ -404,3 +671,33 @@ window.addEventListener("DOMContentLoaded", () => {
 
 document.cookie = "username=Jan; expires=" + date.toUTCString() + "; path=/";
 document.cookie = "username=Jan; path=/; max-age=" + (60 * 60 * 24 * 7);
+=======
+// Main game initialization
+console.log("Script loaded, initializing game...");
+
+// Create game instance
+const game = new Game();
+console.log("Game instance created");
+
+// Load saved game if available
+const saved = Storage.load();
+if (saved) {
+    console.log("Loading saved game state");
+    game.load(saved);
+}
+
+// Initialize UI when DOM is fully loaded
+window.addEventListener("DOMContentLoaded", () => {
+    console.log("DOM fully loaded, initializing UI...");
+    UI.init(game);
+    game.start();
+    
+    // Autosave every 15 seconds
+    setInterval(() => {
+        Storage.save(game);
+        console.log("Game autosaved");
+    }, 15000);
+    
+    console.log("Game started!");
+});
+>>>>>>> origin/main:javascript.js
