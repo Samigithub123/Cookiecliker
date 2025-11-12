@@ -6,8 +6,17 @@
 	<title>Cookie Clicker</title>
 	<link rel="stylesheet" href="style.css">
 	<style>
+		:root {
+			--bg: beige;
+			--text: #0f172a;
+			--muted: #334155;
+			--panel: #ffffffcc;
+			--accent: #0ea5e9;
+			--accent-hover: #0284c7;
+		}
 		html, body {
-			background-color: beige !important;
+			background-color: var(--bg);
+			color: var(--text);
 			height: 100%;
 		}
 
@@ -19,7 +28,7 @@
 
 		.title {
 			font-family: system-ui, sans-serif;
-			color: #0f172a;
+			color: var(--text);
 			margin-bottom: 16px;
 		}
 
@@ -27,7 +36,7 @@
 			font-family: system-ui, sans-serif;
 			font-size: 32px;
 			font-weight: 700;
-			color: #0f172a;
+			color: var(--text);
 			margin: 16px 0;
 		}
 
@@ -45,15 +54,130 @@
 			object-fit: contain;
 			margin: 0 auto;
 		}
+
+		.section-title {
+			font-family: system-ui, sans-serif;
+			font-size: 18px;
+			font-weight: 700;
+			color: var(--text);
+			margin: 24px 0 8px;
+		}
+		.list {
+			display: grid;
+			grid-template-columns: 1fr;
+			gap: 8px;
+			margin: 0 auto;
+			max-width: 520px;
+			text-align: left;
+		}
+		.card {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			padding: 10px 12px;
+			border-radius: 8px;
+			background: var(--panel);
+			box-shadow: 0 1px 3px rgba(0,0,0,.08);
+		}
+		.card h3 {
+			margin: 0 0 4px 0;
+			font-family: system-ui, sans-serif;
+			font-size: 16px;
+			color: var(--text);
+		}
+		.card p {
+			margin: 0;
+			font-family: system-ui, sans-serif;
+			font-size: 13px;
+			color: var(--muted);
+		}
+		.small {
+			font-size: 12px;
+			color: var(--muted);
+		}
+		.btn {
+			border: none;
+			background: var(--accent);
+			color: var(--bg);
+			border-radius: 6px;
+			padding: 8px 10px;
+			cursor: pointer;
+			font-family: system-ui, sans-serif;
+			font-weight: 600;
+			transition: background-color .2s ease;
+		}
+		.btn:disabled {
+			opacity: .5;
+			cursor: not-allowed;
+			background: rgba(148, 163, 184, 0.6);
+			color: var(--text);
+		}
+		.btn:not(:disabled):hover {
+			background: var(--accent-hover);
+		}
+		.select {
+			width: 100%;
+			max-width: 320px;
+			margin: 0 auto;
+			padding: 8px 10px;
+			border-radius: 6px;
+			border: 1px solid rgba(148,163,184,.6);
+			font-family: system-ui, sans-serif;
+		}
+		.theme-picker {
+			display: flex;
+			flex-direction: column;
+			gap: 6px;
+			align-items: center;
+			margin-bottom: 8px;
+		}
+		.unlock-list {
+			list-style: none;
+			padding: 0;
+			margin: 0 auto;
+			max-width: 520px;
+			display: grid;
+			gap: 8px;
+		}
+		.unlock-card {
+			background: var(--panel);
+			padding: 10px 12px;
+			border-radius: 8px;
+			box-shadow: 0 1px 3px rgba(0,0,0,.08);
+			font-family: system-ui, sans-serif;
+			color: var(--text);
+		}
+		.unlock-card span {
+			display: block;
+			font-size: 12px;
+			color: var(--muted);
+			margin-top: 4px;
+		}
 	</style>
 </head>
 <body>
 	<main class="container">
 		<h1 class="title">Cookie Clicker</h1>
 		<div id="cookies" class="counter">0</div>
+		<div id="stats" class="small">+1/klik • 0/s</div>
 		<button id="cookieButton" type="button" aria-label="Cookie" class="cookie-btn">
 			<img id="cookieImage" src="assets/Cookie_foto-removebg-preview.png" alt="Cookie" class="cookie-img">
 		</button>
+
+		<div class="section-title">Thema</div>
+		<div class="theme-picker">
+			<select id="themeSelect" class="select"></select>
+			<div class="small">Ontgrendel nieuwe thema's door te spelen.</div>
+		</div>
+
+		<div class="section-title">Upgrades</div>
+		<div id="upgradeList" class="list"></div>
+
+		<div class="section-title">Producers</div>
+		<div id="producerList" class="list"></div>
+
+		<div class="section-title">Ontgrendelingen</div>
+		<ul id="unlockList" class="unlock-list"></ul>
 	</main>
 
 	<script src="main.js"></script>
