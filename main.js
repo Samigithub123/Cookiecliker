@@ -233,7 +233,6 @@ class Game {
 	}
 
 	setTheme(themeId) {
-		if (!this.isThemeUnlocked(themeId)) return false;
 		this.theme = themeId;
 		return true;
 	}
@@ -306,7 +305,8 @@ ThemeManager.THEMES = [
 			"--muted": "#475569",
 			"--panel": "rgba(255,255,255,0.9)",
 			"--accent": "#0ea5e9",
-			"--accent-hover": "#0284c7"
+			"--accent-hover": "#0284c7",
+			"--bg-image": "none"
 		}
 	},
 	{
@@ -317,9 +317,10 @@ ThemeManager.THEMES = [
 			"--bg": "#0f172a",
 			"--text": "#e2e8f0",
 			"--muted": "#94a3b8",
-			"--panel": "rgba(15, 23, 42, 0.85)",
+			"--panel": "rgba(0, 0, 0, 0.44)",
 			"--accent": "#38bdf8",
-			"--accent-hover": "#0ea5e9"
+			"--accent-hover": "#0ea5e9",
+			"--bg-image": "url('assets/midnight cookie clicker 2.png')"
 		}
 	},
 	{
@@ -330,9 +331,10 @@ ThemeManager.THEMES = [
 			"--bg": "#0f3d31",
 			"--text": "#ecfdf5",
 			"--muted": "#a7f3d0",
-			"--panel": "rgba(6, 78, 59, 0.8)",
+			"--panel": "rgba(0, 0, 0, 0.5)",
 			"--accent": "#34d399",
-			"--accent-hover": "#10b981"
+			"--accent-hover": "#10b981",
+			"--bg-image": "url('assets/forest cookie clicker 2.png')"
 		}
 	}
 ];
@@ -392,15 +394,17 @@ class GameUI {
 		this.$upgradeList.innerHTML = "";
 		for (const u of this.game.upgrades) {
 			const card = document.createElement("div");
-			card.className = "card";
+			card.className = "card mb-1";
 			card.innerHTML = `
-				<div>
-					<h3>${u.name} <span class="small">(Lv. ${u.level})</span></h3>
-					<p>${u.description}</p>
-					<p class="small">Cost: ${Format.number(u.cost)}</p>
-				</div>
-				<div>
-					<button class="btn buy-upgrade" data-id="${u.id}">Buy</button>
+				<div class="card-body py-2 px-3 d-flex justify-content-between align-items-center">
+					<div class="flex-grow-1">
+						<h6 class="card-title mb-0 small">${u.name} <span class="text-muted">(Lv. ${u.level})</span></h6>
+						<p class="card-text mb-0 small text-muted">${u.description}</p>
+					</div>
+					<div class="d-flex align-items-center gap-2 ms-4">
+						<strong class="text-primary">${Format.number(u.cost)} cookies</strong>
+						<button class="btn btn-primary btn-sm buy-upgrade" data-id="${u.id}">Buy</button>
+					</div>
 				</div>
 			`;
 			this.$upgradeList.appendChild(card);
@@ -409,15 +413,17 @@ class GameUI {
 		this.$producerList.innerHTML = "";
 		for (const p of this.game.producers) {
 			const card = document.createElement("div");
-			card.className = "card";
+			card.className = "card mb-1";
 			card.innerHTML = `
-				<div>
-					<h3>${p.name} <span class="small">(x${p.count})</span></h3>
-					<p>${p.cps} /s each</p>
-					<p class="small">Cost: ${Format.number(p.cost)}</p>
-				</div>
-				<div>
-					<button class="btn buy-producer" data-id="${p.id}">Buy</button>
+				<div class="card-body py-2 px-3 d-flex justify-content-between align-items-center">
+					<div class="flex-grow-1">
+						<h6 class="card-title mb-0 small">${p.name} <span class="text-muted">(x${p.count})</span></h6>
+						<p class="card-text mb-0 small text-muted">${p.cps} /s each</p>
+					</div>
+					<div class="d-flex align-items-center gap-2 ms-4">
+						<strong class="text-primary">${Format.number(p.cost)} cookies</strong>
+						<button class="btn btn-primary btn-sm buy-producer" data-id="${p.id}">Buy</button>
+					</div>
 				</div>
 			`;
 			this.$producerList.appendChild(card);
@@ -429,12 +435,28 @@ class GameUI {
 		for (const btn of document.querySelectorAll(".buy-upgrade")) {
 			const id = btn.getAttribute("data-id");
 			const u = this.game.upgrades.find(x => x.id === id);
-			btn.disabled = !this.game.canAfford(u.cost);
+			const canAfford = this.game.canAfford(u.cost);
+			btn.disabled = !canAfford;
+			if (canAfford) {
+				btn.classList.remove("btn-secondary");
+				btn.classList.add("btn-primary");
+			} else {
+				btn.classList.remove("btn-primary");
+				btn.classList.add("btn-secondary");
+			}
 		}
 		for (const btn of document.querySelectorAll(".buy-producer")) {
 			const id = btn.getAttribute("data-id");
 			const p = this.game.producers.find(x => x.id === id);
-			btn.disabled = !this.game.canAfford(p.cost);
+			const canAfford = this.game.canAfford(p.cost);
+			btn.disabled = !canAfford;
+			if (canAfford) {
+				btn.classList.remove("btn-secondary");
+				btn.classList.add("btn-primary");
+			} else {
+				btn.classList.remove("btn-primary");
+				btn.classList.add("btn-secondary");
+			}
 		}
 		this.renderThemeOptions();
 		this.renderUnlocks();
@@ -443,10 +465,8 @@ class GameUI {
 		this.$themeSelect.innerHTML = "";
 		for (const theme of ThemeManager.list()) {
 			const option = document.createElement("option");
-			const unlocked = !theme.unlockId || this.game.unlocks.includes(theme.unlockId);
 			option.value = theme.id;
-			option.textContent = unlocked ? theme.name : `${theme.name} (vergrendeld)`;
-			option.disabled = !unlocked;
+			option.textContent = theme.name;
 			if (theme.id === this.game.theme) {
 				option.selected = true;
 			}
@@ -457,8 +477,8 @@ class GameUI {
 		this.$unlockList.innerHTML = "";
 		if (!this.game.unlocks.length) {
 			const li = document.createElement("li");
-			li.className = "unlock-card small";
-			li.textContent = "Nog geen ontgrendelingen. Blijf bakken!";
+			li.className = "list-unstyled";
+			li.innerHTML = `<div class="card mb-1"><div class="card-body py-2 px-3"><p class="text-muted small mb-0">Nog geen ontgrendelingen. Blijf bakken!</p></div></div>`;
 			this.$unlockList.appendChild(li);
 			return;
 		}
@@ -466,8 +486,15 @@ class GameUI {
 			const def = this.game.unlockDefinitions.find((u) => u.id === unlockId);
 			if (!def) continue;
 			const li = document.createElement("li");
-			li.className = "unlock-card";
-			li.innerHTML = `${def.name}<span>${def.description}</span>`;
+			li.className = "list-unstyled";
+			li.innerHTML = `
+				<div class="card mb-1">
+					<div class="card-body py-2 px-3">
+						<h6 class="card-title mb-0 small">${def.name}</h6>
+						<p class="text-muted small mb-0">${def.description}</p>
+					</div>
+				</div>
+			`;
 			this.$unlockList.appendChild(li);
 		}
 	}

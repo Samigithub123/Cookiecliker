@@ -4,6 +4,8 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Cookie Clicker</title>
+	<!-- Bootstrap CSS -->
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
 	<link rel="stylesheet" href="style.css">
 	<style>
 		:root {
@@ -16,14 +18,53 @@
 		}
 		html, body {
 			background-color: var(--bg);
+			background-image: var(--bg-image);
+			background-size: cover;
+			background-position: center;
+			background-repeat: no-repeat;
+			background-attachment: fixed;
 			color: var(--text);
 			height: 100%;
+			min-height: 100vh;
+			overflow: hidden;
 		}
 
-		.container {
-			max-width: 720px;
-			margin: 40px auto;
-			text-align: center;
+		.main-container {
+			height: 100vh;
+			display: flex;
+			padding: 20px;
+			gap: 20px;
+		}
+		.left-panel {
+			flex: 0 0 520px;
+			display: flex;
+			flex-direction: column;
+		}
+		.right-panel {
+			flex: 1;
+			display: flex;
+			flex-direction: column;
+			overflow: hidden;
+			align-items: flex-end;
+		}
+		.scrollable-list {
+			flex: 1;
+			overflow-y: auto;
+			padding-right: 10px;
+		}
+		.scrollable-list::-webkit-scrollbar {
+			width: 8px;
+		}
+		.scrollable-list::-webkit-scrollbar-track {
+			background: rgba(0,0,0,0.1);
+			border-radius: 4px;
+		}
+		.scrollable-list::-webkit-scrollbar-thumb {
+			background: rgba(0,0,0,0.3);
+			border-radius: 4px;
+		}
+		.scrollable-list::-webkit-scrollbar-thumb:hover {
+			background: rgba(0,0,0,0.5);
 		}
 
 		.title {
@@ -49,8 +90,8 @@
 
 		.cookie-img {
 			display: block;
-			width: 200px;
-			height: 200px;
+			width: 240px;
+			height: 240px;
 			object-fit: contain;
 			margin: 0 auto;
 		}
@@ -60,21 +101,19 @@
 			font-size: 18px;
 			font-weight: 700;
 			color: var(--text);
-			margin: 24px 0 8px;
+			margin: 0 0 8px 0;
 		}
 		.list {
-			display: grid;
-			grid-template-columns: 1fr;
-			gap: 8px;
-			margin: 0 auto;
-			max-width: 520px;
+			display: flex;
+			flex-direction: column;
+			gap: 4px;
 			text-align: left;
 		}
 		.card {
 			display: flex;
 			justify-content: space-between;
 			align-items: center;
-			padding: 10px 12px;
+			padding: 6px 10px;
 			border-radius: 8px;
 			background: var(--panel);
 			box-shadow: 0 1px 3px rgba(0,0,0,.08);
@@ -134,9 +173,9 @@
 		.unlock-list {
 			list-style: none;
 			padding: 0;
-			margin: 0 auto;
-			max-width: 520px;
-			display: grid;
+			margin: 0;
+			display: flex;
+			flex-direction: column;
 			gap: 8px;
 		}
 		.unlock-card {
@@ -153,32 +192,58 @@
 			color: var(--muted);
 			margin-top: 4px;
 		}
+		.buy-upgrade, .buy-producer {
+			padding: 0.2rem 0.6rem !important;
+			min-width: 52px;
+		}
+		.right-panel .list { width: 100%; max-width: 560px; margin-left: auto; }
+		.right-panel .section-title { width: 100%; max-width: 560px; margin-left: auto; }
+		.right-panel .scrollable-list { padding-right: 0; }
+		.right-panel .card { width: 100%; }
+		.right-panel .mb-3 { width: 100%; max-width: 560px; margin-left: auto; }
+		/* Ensure text colors follow theme variables */
+		body { color: var(--text); }
+		.card-title, .card-text { color: var(--text); }
+		.small { color: var(--muted); }
+		.text-muted { color: var(--muted) !important; }
+		.text-primary { color: var(--accent) !important; }
+		.form-select { color: var(--text); background-color: var(--panel); }
 	</style>
 </head>
 <body>
-	<main class="container">
-		<h1 class="title">Cookie Clicker</h1>
-		<div id="cookies" class="counter">0</div>
-		<div id="stats" class="small">+1/klik • 0/s</div>
-		<button id="cookieButton" type="button" aria-label="Cookie" class="cookie-btn">
-			<img id="cookieImage" src="assets/Cookie_foto-removebg-preview.png" alt="Cookie" class="cookie-img">
-		</button>
+	<div class="main-container">
+		<!-- Left Panel: Cookie Clicker -->
+		<div class="left-panel">
+			<div class="text-center flex-grow-1 d-flex flex-column justify-content-center">
+				<h1 class="title mb-3">Cookie Clicker</h1>
+				<div id="cookies" class="counter">0</div>
+				<div id="stats" class="text-muted small mb-4">+1/klik • 0/s</div>
+				<button id="cookieButton" type="button" aria-label="Cookie" class="cookie-btn">
+					<img id="cookieImage" src="assets/Cookie_foto-removebg-preview.png" alt="Cookie" class="cookie-img">
+				</button>
+			</div>
 
-		<div class="section-title">Thema</div>
-		<div class="theme-picker">
-			<select id="themeSelect" class="select"></select>
-			<div class="small">Ontgrendel nieuwe thema's door te spelen.</div>
+			<div class="mt-auto">
+				<div class="section-title">Ontgrendelingen</div>
+				<div class="scrollable-list" style="max-height: 200px;">
+					<ul id="unlockList" class="unlock-list"></ul>
+				</div>
+			</div>
 		</div>
 
-		<div class="section-title">Upgrades</div>
-		<div id="upgradeList" class="list"></div>
-
-		<div class="section-title">Producers</div>
-		<div id="producerList" class="list"></div>
-
-		<div class="section-title">Ontgrendelingen</div>
-		<ul id="unlockList" class="unlock-list"></ul>
-	</main>
+		<!-- Right Panel: Upgrades and Producers -->
+		<div class="right-panel">
+			<div class="mb-3">
+				<select id="themeSelect" class="form-select form-select-sm"></select>
+				<div class="small text-muted mt-1">Ontgrendel nieuwe thema's door te spelen.</div>
+			</div>
+			<div class="section-title mb-2">Upgrades</div>
+			<div id="upgradeList" class="scrollable-list list"></div>
+			
+			<div class="section-title mb-2 mt-3">Producers</div>
+			<div id="producerList" class="scrollable-list list"></div>
+		</div>
+	</div>
 
 	<script src="main.js"></script>
 </body>
